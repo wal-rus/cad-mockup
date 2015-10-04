@@ -2,7 +2,7 @@
 #include <fstream>
 
 void PrintUsage() {
-  std::cout << "invalid arguments. Json Data required" << std::endl;
+  std::cout << "Invalid arguments. Json Data required" << std::endl;
 }
 
 int main(int argc, char** argv) {
