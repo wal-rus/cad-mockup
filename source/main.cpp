@@ -7,6 +7,15 @@ void PrintUsage() {
   std::cout << "Invalid arguments. Json Data required" << std::endl;
 }
 
+struct ToolInfo {
+  const double padding; //In inches
+  const double max_speed; //In inches
+  const double cost; //In dollars per second
+};
+
+const static ToolInfo LASER_CUTTER = {.1, .5, 0.07};
+const static double MATERIAL_COST_PER_IN2 = 0.75;
+
 int main(int argc, char** argv) {
   if(argc != 2) {
     PrintUsage();
