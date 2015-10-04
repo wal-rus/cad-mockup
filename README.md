@@ -10,5 +10,4 @@ C++11 compatible compiler
 
 ##External Libraries
 
--picojson
-   https://github.com/kazuho/picojson
+picojson - https://github.com/kazuho/picojson
