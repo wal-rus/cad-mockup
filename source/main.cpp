@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "picojson.h"
+
 void PrintUsage() {
   std::cout << "Invalid arguments. Json Data required" << std::endl;
 }
@@ -14,6 +16,15 @@ int main(int argc, char** argv) {
   std::string dataFileName(argv[1]);
 
   std::ifstream dataFile(dataFileName);
-  std::cout << dataFile.rdbuf() << std::endl;
+  if( dataFile.fail() ) {
+    std::cout << "Error opening file " << dataFileName << std::endl;
+    return 1;
+  }
+
+  picojson::value v;
+  dataFile >> v;
+
+  std::cout << "-- dump --" << std::endl;
+  std::cout << v << std::endl;
   return 0;
 }
