@@ -1,6 +1,19 @@
 #include <iostream>
+#include <fstream>
+
+void PrintUsage() {
+  std::cout << "invalid arguments. Json Data required" << std::endl;
+}
 
 int main(int argc, char** argv) {
-  std::cout<< "Hello World" << std::endl;
+  if(argc != 2) {
+    PrintUsage();
+    return 1;
+  }
+
+  std::string dataFileName(argv[1]);
+
+  std::ifstream dataFile(dataFileName);
+  std::cout << dataFile.rdbuf() << std::endl;
   return 0;
 }
