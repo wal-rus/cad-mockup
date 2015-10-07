@@ -18,26 +18,14 @@ void PrintUsage() {
 
 const static MachineInfo LASER_CUT_ALUMINUM = {.1, .5, 0.07, 0.75};
 
-
-double ComputeMaterialCost(const MachineInfo& job, const ToolPath& path) {
-  auto dimensions = path.ComputeBounds();
-  dimensions.x += job.padding;
-  dimensions.y += job.padding;
-  const auto area = dimensions.x * dimensions.y;
-  const auto cost = area * job.cost_per_sq_in;
-  return cost;
-}
-
-void ProduceQuote(const MachineInfo& job, const ToolPath& path) {
+void ProduceQuote(const MachineInfo& tooling, const ToolPath& path) {
   
-  const auto cutTime = path.ComputeTravelHeuristic() / job.max_speed;
+  const auto cutTime = path.ComputeTravelHeuristic() / tooling.max_speed;
   std::cout << "Estimated cut time: " << cutTime << " seconds" << std::endl;
-  
-  const auto totalCost = (cutTime * job.cost_per_s) + ComputeMaterialCost(job, path);
   
   std::cout << "Estimated cost: $" <<
     std::fixed << std::setprecision(2) <<
-    totalCost << std::endl;
+    ComputeCost(tooling, path.ComputeBounds(), cutTime) << std::endl;
   }
 
 int main(int argc, char** argv) {

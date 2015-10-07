@@ -1,5 +1,7 @@
 #pragma once
 
+struct Vector2;
+
 //Basic description of the parameters for a CNC machine
 //Defined as a separate structure to allow serialization.
 struct MachineInfo  {
@@ -9,3 +11,4 @@ struct MachineInfo  {
   const double cost_per_sq_in; //In dollars per square inch.
 };
 
+double ComputeCost(const MachineInfo& tooling, const Vector2& bounds, double cutTime);
