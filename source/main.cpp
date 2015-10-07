@@ -7,28 +7,19 @@
 #include <cmath>
 
 #include "picojson.h"
+#include "JobProfile.h"
 #include "Vector2.h"
 
 void PrintUsage() {
   std::cout << "Invalid arguments. Json Data required" << std::endl;
 }
 
-struct ToolInfo {
-  const double padding; //In inches
-  const double max_speed; //In inches per second
-  const double cost; //In dollars per second
-};
-
-struct MaterialInfo {
-  const double cost_per_sq_in;
-};
-
 struct ToolPath {
   const picojson::value v; //for now just do operations in place.
 };
 
-const static ToolInfo LASER_CUTTER = {.1, .5, 0.07};
-const static MaterialInfo ALUMINUM = { 0.75 };
+const static JobProfile LASER_CUT_ALUMINUM = {.1, .5, 0.07, 0.75};
+
 
 Vector2 ParseVector(const picojson::value& xyPair) {
   return { xyPair.get("X").get<double>(), xyPair.get("Y").get<double>() };
@@ -42,8 +33,10 @@ Vector2 ParseVertex(const picojson::value& vertices, const std::string& id) {
 
 //Assumes the edges form a connected shape, we can garuntee that
 //the total tool travel time is the sum of the travel time of each edge.
-double ComputePathCost(const ToolInfo& tool, const ToolPath& path) {
-  double sumCost = 0;
+
+double ComputeTravelDistance(const ToolPath& path) {
+  
+  double sumDistance = 0;
   if(!path.v.is<picojson::object>())
     return 0;
   
@@ -59,9 +52,7 @@ double ComputePathCost(const ToolInfo& tool, const ToolPath& path) {
       const auto v1 = ParseVertex(vertices, edgeVertices[1].to_str());
       
       const auto dist = Distance(v0,v1);
-      const auto time = dist / tool.max_speed;
-      const auto cost = time * tool.cost;
-      sumCost += cost;
+      sumDistance += dist;
     }
     else if( type == "CircularArc") {
       const auto& edgeVertices = edge.second.get("Vertices").get<picojson::array>();
@@ -75,21 +66,24 @@ double ComputePathCost(const ToolInfo& tool, const ToolPath& path) {
       const double arcAngle = acos(Dot(arcLine0,arcLine1));
       const double arcLength = arcAngle * radius;
       
-      const auto cutSpeed = tool.max_speed * exp(-1/radius);
-      const auto arcTime = arcLength / cutSpeed;
-      const auto arcCost = arcTime * tool.cost;
-
-      sumCost += arcCost;
+      //Scale to compensate for the tool's arc traversing behavior
+      const auto arcEffectiveLength = arcLength * (1/exp(-1/radius));
+      sumDistance += arcEffectiveLength;
     }
     else {
       std::cout << "Unknown segment type:" << type << std::endl;
     }
   }
 
-  return sumCost;
+  return sumDistance;
 };
 
-Vector2 ComputeRequiredDimensions(const MaterialInfo& material, const ToolPath& path) {
+double ComputePathCost(const JobProfile& job, const ToolPath& path) {
+  const auto distance = ComputeTravelDistance(path);
+  return (distance / job.max_speed) * job.cost_per_s;
+}
+
+Vector2 ComputeRequiredDimensions(const ToolPath& path) {
   const auto& obj = path.v.get<picojson::object>();
   const auto& edges = obj.find("Edges")->second.get<picojson::object>();
   const auto& vertices = obj.find("Vertices")->second;
@@ -154,21 +148,21 @@ Vector2 ComputeRequiredDimensions(const MaterialInfo& material, const ToolPath& 
   return maxPoint - minPoint;
 }
 
-double ComputeMaterialCost(const MaterialInfo& mat, const ToolInfo& tool, const ToolPath& path) {
-  auto dimensions = ComputeRequiredDimensions(mat,path);
-  dimensions.x += tool.padding;
-  dimensions.y += tool.padding;
+double ComputeMaterialCost(const JobProfile& job, const ToolPath& path) {
+  auto dimensions = ComputeRequiredDimensions(path);
+  dimensions.x += job.padding;
+  dimensions.y += job.padding;
   const auto area = dimensions.x * dimensions.y;
-  const auto cost = area * mat.cost_per_sq_in;
+  const auto cost = area * job.cost_per_sq_in;
   return cost;
 }
 
-void ProduceQuote(const MaterialInfo& mat, const ToolInfo& tool, const ToolPath& path) {
+void ProduceQuote(const JobProfile& job, const ToolPath& path) {
   
-  const auto machineCost = ComputePathCost(tool, path);
+  const auto machineCost = ComputePathCost(job, path);
   std::cout << "Machine cost is " << machineCost << std::endl;
   
-  const auto materialCost = ComputeMaterialCost(mat, tool, path);
+  const auto materialCost = ComputeMaterialCost(job, path);
   std::cout << "Material cost is " << materialCost << std::endl;
   
   std::cout << "Total cost is " << std::fixed << std::setprecision(2) << machineCost + materialCost << std::endl;
@@ -190,6 +184,6 @@ int main(int argc, char** argv) {
   
   ToolPath path = {std::move(v)};
   
-  ProduceQuote(ALUMINUM, LASER_CUTTER, path);
+  ProduceQuote(LASER_CUT_ALUMINUM, path);
   return 0;
 }
