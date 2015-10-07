@@ -78,11 +78,6 @@ double ComputeTravelDistance(const ToolPath& path) {
   return sumDistance;
 };
 
-double ComputePathCost(const JobProfile& job, const ToolPath& path) {
-  const auto distance = ComputeTravelDistance(path);
-  return (distance / job.max_speed) * job.cost_per_s;
-}
-
 Vector2 ComputeRequiredDimensions(const ToolPath& path) {
   const auto& obj = path.v.get<picojson::object>();
   const auto& edges = obj.find("Edges")->second.get<picojson::object>();
@@ -159,13 +154,15 @@ double ComputeMaterialCost(const JobProfile& job, const ToolPath& path) {
 
 void ProduceQuote(const JobProfile& job, const ToolPath& path) {
   
-  const auto machineCost = ComputePathCost(job, path);
-  std::cout << "Machine cost is " << machineCost << std::endl;
+  const auto cutTime = ComputeTravelDistance(path) / job.max_speed;
+  std::cout << "Estimated cut time: " << cutTime << " seconds" << std::endl;
   
-  const auto materialCost = ComputeMaterialCost(job, path);
-  std::cout << "Material cost is " << materialCost << std::endl;
+  const auto totalCost = (cutTime * job.cost_per_s) + ComputeMaterialCost(job, path);
   
-  std::cout << "Total cost is " << std::fixed << std::setprecision(2) << machineCost + materialCost << std::endl;
+  std::cout << "Estimated cost: $" <<
+    std::fixed << std::setprecision(2) <<
+    totalCost << std::endl;
+  
 }
 
 int main(int argc, char** argv) {
