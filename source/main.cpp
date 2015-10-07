@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "picojson.h"
+#include "Vector2.h"
 
 void PrintUsage() {
   std::cout << "Invalid arguments. Json Data required" << std::endl;
@@ -29,46 +30,11 @@ struct ToolPath {
   const picojson::value v; //for now just do operations in place.
 };
 
-struct Vector {
-  double x,y;
-};
-
-Vector operator-(const Vector& v0, const Vector& v1) {
-  return { v0.x - v1.x, v0.y - v1.y };
-}
-
-Vector operator+(const Vector& v0, const Vector& v1) {
-  return { v0.x + v1.x, v0.y + v1.y };
-}
-
-Vector operator*(const Vector& v0, const Vector& v1) {
-  return { v0.x * v1.x, v0.y * v1.y };
-}
-
-Vector operator/(const Vector& v0, const Vector& v1) {
-  return { v0.x / v1.x, v0.y / v1.y };
-}
-
-double Dot(const Vector& v0, const Vector& v1) {
-  return (v0.x * v1.x) + (v0.y * v1.y);
-}
-
-double Distance(const Vector& v0, const Vector& v1) {
-  const auto diff = v1 - v0;
-  return sqrt( Dot(diff,diff) );
-}
-
-Vector Normalized(const Vector& v) {
-  const static Vector zero = {0.,0.};
-  auto mag = Distance(v, zero);
-  return {v.x / mag, v.y / mag};
-}
-  
-Vector ParseVector(const picojson::value& xyPair) {
+Vector2 ParseVector(const picojson::value& xyPair) {
   return { xyPair.get("X").get<double>(), xyPair.get("Y").get<double>() };
 }
 
-Vector ParseVertex(const picojson::value& vertices, const std::string& id) {
+Vector2 ParseVertex(const picojson::value& vertices, const std::string& id) {
   const auto& vertex = vertices.get(id);
   const auto& position = vertex.get("Position");
   return ParseVector(position);
@@ -123,13 +89,13 @@ double ComputePathCost(const ToolInfo& tool, const ToolPath& path) {
   return sumCost;
 };
 
-Vector ComputeRequiredDimensions(const MaterialInfo& material, const ToolPath& path) {
+Vector2 ComputeRequiredDimensions(const MaterialInfo& material, const ToolPath& path) {
   const auto& obj = path.v.get<picojson::object>();
   const auto& edges = obj.find("Edges")->second.get<picojson::object>();
   const auto& vertices = obj.find("Vertices")->second;
   
-  Vector minPoint = { std::numeric_limits<double>::max(), std::numeric_limits<double>::max() };
-  Vector maxPoint = { std::numeric_limits<double>::min(), std::numeric_limits<double>::min() };
+  Vector2 minPoint = { std::numeric_limits<double>::max(), std::numeric_limits<double>::max() };
+  Vector2 maxPoint = { std::numeric_limits<double>::min(), std::numeric_limits<double>::min() };
   
   for( const auto& edge : edges) {
     const auto type = edge.second.get("Type").to_str();
@@ -171,8 +137,8 @@ Vector ComputeRequiredDimensions(const MaterialInfo& material, const ToolPath& p
         double theta = M_PI_2 * i;
         theta = std::min( a1, std::max(a0, theta) ); //clamp between a0 and a1
 
-        const Vector angleVector = { cos(theta)*radius, sin(theta)*radius };
-        const Vector arcPoint = center + angleVector;
+        const Vector2 angleVector = { cos(theta)*radius, sin(theta)*radius };
+        const Vector2 arcPoint = center + angleVector;
       
         minPoint.x = std::min(minPoint.x, arcPoint.x);
         minPoint.y = std::min(minPoint.y, arcPoint.y);
