@@ -1,6 +1,10 @@
 set(CadQuote_SOURCES
-  JobProfile.h
+  JsonSerialization.cpp
+  JsonSerialization.h
+  MachineInfo.h
   picojson.h
+  ToolPath.cpp
+  ToolPath.h
   main.cpp
   Vector2.h
 )
