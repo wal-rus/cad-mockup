@@ -23,12 +23,12 @@ struct MaterialInfo {
   const double cost_per_sq_in;
 };
 
-const static ToolInfo LASER_CUTTER = {.1, .5, 0.07};
-const static MaterialInfo ALUMINUM = { 0.75 };
-
 struct ToolPath {
   const picojson::value v; //for now just do operations in place.
 };
+
+const static ToolInfo LASER_CUTTER = {.1, .5, 0.07};
+const static MaterialInfo ALUMINUM = { 0.75 };
 
 Vector2 ParseVector(const picojson::value& xyPair) {
   return { xyPair.get("X").get<double>(), xyPair.get("Y").get<double>() };
@@ -163,31 +163,33 @@ double ComputeMaterialCost(const MaterialInfo& mat, const ToolInfo& tool, const 
   return cost;
 }
 
+void ProduceQuote(const MaterialInfo& mat, const ToolInfo& tool, const ToolPath& path) {
+  
+  const auto machineCost = ComputePathCost(tool, path);
+  std::cout << "Machine cost is " << machineCost << std::endl;
+  
+  const auto materialCost = ComputeMaterialCost(mat, tool, path);
+  std::cout << "Material cost is " << materialCost << std::endl;
+  
+  std::cout << "Total cost is " << std::fixed << std::setprecision(2) << machineCost + materialCost << std::endl;
+}
+
 int main(int argc, char** argv) {
   if(argc != 2) {
     PrintUsage();
     return 1;
   }
-
-  std::string dataFileName(argv[1]);
-
-  std::ifstream dataFile(dataFileName);
-  if( dataFile.fail() ) {
-    std::cout << "Error opening file " << dataFileName << std::endl;
-    return 1;
+  
+  std::ifstream pathFile(argv[1]);
+  if( pathFile.bad() ) {
+    throw std::runtime_error("Error opening path file." );
   }
-
+  
   picojson::value v;
-  dataFile >> v;
-
+  pathFile >> v;
+  
   ToolPath path = {std::move(v)};
   
-  const auto machineCost = ComputePathCost(LASER_CUTTER, path);
-  std::cout << "Machine cost is " << machineCost << std::endl;
-  
-  const auto materialCost = ComputeMaterialCost(ALUMINUM, LASER_CUTTER, path);
-  std::cout << "Material cost is " << materialCost << std::endl;
-
-  std::cout << "Total cost is " << std::fixed << std::setprecision(2) << machineCost + materialCost << std::endl;
+  ProduceQuote(ALUMINUM, LASER_CUTTER, path);
   return 0;
 }
