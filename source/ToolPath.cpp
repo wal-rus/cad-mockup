@@ -32,7 +32,7 @@ ToolPath::ToolPath(const picojson::value &v) {
   for(const auto& vertex : vertices) {
     const auto& vertexID = vertex.first;
     vertexIndexes[vertexID] = m_vertices.size();
-    
+
     m_vertices.push_back(
       ParseVector(GetRequired(vertex.second,"Position"))
     );
@@ -102,13 +102,11 @@ Vector2 ToolPath::ComputeBounds() const {
   Vector2 maxPoint = { std::numeric_limits<double>::min(), std::numeric_limits<double>::min() };
   
   for( const auto& edge : m_linearEdges) {
-    const auto &v0 = *edge.v0;
-    const auto &v1 = *edge.v1;
+    PiecewiseMin(minPoint, *edge.v0);
+    PiecewiseMin(minPoint, *edge.v1);
 
-    minPoint.x = std::min(minPoint.x, std::min(v0.x,v1.x));
-    minPoint.y = std::min(minPoint.y, std::min(v0.y,v1.y));
-    maxPoint.x = std::max(maxPoint.x, std::max(v0.x,v1.x));
-    maxPoint.y = std::max(maxPoint.y, std::max(v0.y,v1.y));
+    PiecewiseMax(maxPoint, *edge.v0);
+    PiecewiseMax(maxPoint, *edge.v1);
   }
   
   for( const auto& edge : m_arcEdges) {
@@ -137,10 +135,8 @@ Vector2 ToolPath::ComputeBounds() const {
       const Vector2 angleVector = { cos(theta)*radius, sin(theta)*radius };
       const Vector2 arcPoint = center + angleVector;
         
-      minPoint.x = std::min(minPoint.x, arcPoint.x);
-      minPoint.y = std::min(minPoint.y, arcPoint.y);
-      maxPoint.x = std::max(maxPoint.x, arcPoint.x);
-      maxPoint.y = std::max(maxPoint.y, arcPoint.y);
+      PiecewiseMin(minPoint, arcPoint);
+      PiecewiseMax(maxPoint, arcPoint);
     }
   }
   
