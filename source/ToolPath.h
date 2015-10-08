@@ -6,20 +6,17 @@
 
 class ToolPath {
 public:
-  
+
   ToolPath(const picojson::value &value);
 
   //Returns roughly the distance in inches, but scaled slightly to
   //account for accelleration time between direction changes and
   //the slower speed of traversing arcs.
   double ComputeTravelHeuristic() const;
-  
+
   Vector2 ComputeBounds() const;
-  
-  //Construction methods
-  size_t AddVertex(const Vector2& v);
 private:
-  
+
   //We parse all vertices before the edges, so it is safe to store pointers
   //into the vertex set directly.
   struct LinearEdge {
@@ -27,7 +24,7 @@ private:
     const Vector2* v0;
     const Vector2* v1;
   };
-  
+
   struct ArcEdge {
     ArcEdge(Vector2* a, Vector2* b, const Vector2& c) : v0(a), v1(b), center(c) {}
     const Vector2* v0;

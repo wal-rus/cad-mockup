@@ -10,5 +10,5 @@ set(CadQuote_SOURCES
   Vector2.h
 )
 
-add_executable(CadQuote ${CadQuote_SOURCES})
+add_executable(cadquote ${CadQuote_SOURCES})
 
